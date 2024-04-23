@@ -1,0 +1,24 @@
+{
+    "database": {
+        "server": {
+            "location": "localhost",
+            "port": 5432,
+            "username": "postgres",
+            "password": "1234",
+            "database_name": "postgres"
+        }
+    },
+    "fleet_management_server": {
+        "base_uri": "127.0.0.1:8080/v2/management",
+        "api_key": "abcd"
+    },
+    "twilio": {
+        "account_sid": "AAAAAAAAA",
+        "auth_token": "BBBBBBBBB",
+        "from_number": "+1234567890",
+        "play_sound_url": "https://bringauto.com/wp-content/uploads/2021/10/BringAuto.mp3"
+    },
+    "car": {
+        "name": "BringAuto Virtual"
+    }
+}
