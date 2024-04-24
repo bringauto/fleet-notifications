@@ -9,8 +9,8 @@
         }
     },
     "fleet_management_server": {
-        "base_uri": "127.0.0.1:8080/v2/management",
-        "api_key": "abcd"
+        "base_uri": "https://api.dev.bringautofleet.com/v2/management",
+        "api_key": ""
     },
     "twilio": {
         "account_sid": "AAAAAAAAA",
@@ -19,6 +19,6 @@
         "play_sound_url": "https://bringauto.com/wp-content/uploads/2021/10/BringAuto.mp3"
     },
     "car": {
-        "name": "BringAuto Virtual"
+        "name": "virtual_vehicle_k8s"
     }
 }
