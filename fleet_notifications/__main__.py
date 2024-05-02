@@ -3,6 +3,7 @@ sys.path.append("fleet_notifications")
 import logging
 
 from database.connection import set_db_connection
+from database.database_controller import create_orders_table
 import database.script_args as script_args  # type: ignore
 from state_checker import start
 from fleet_management_http_client_python import ApiClient, Configuration
@@ -29,6 +30,7 @@ if __name__ == '__main__':
     config = vals.config
     _set_up_log_format()
     _connect_to_database(vals)
+    create_orders_table()
     api_client = ApiClient(Configuration(
         host=config['fleet_management_server']['base_uri'],
         api_key={'APIKeyAuth': config['fleet_management_server']['api_key']}

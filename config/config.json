@@ -9,16 +9,18 @@
         }
     },
     "fleet_management_server": {
-        "base_uri": "https://api.dev.bringautofleet.com/v2/management",
-        "api_key": ""
+        "base_uri": "http://localhost:8081/v2/management",
+        "api_key": "yTKTgimlqVaBfSgmgQyfvwrhgVrrAP"
     },
     "twilio": {
         "account_sid": "AAAAAAAAA",
         "auth_token": "BBBBBBBBB",
         "from_number": "+1234567890",
-        "play_sound_url": "https://bringauto.com/wp-content/uploads/2021/10/BringAuto.mp3"
+        "play_sound_url": "https://bringauto.com/wp-content/uploads/2021/10/BringAuto.mp3",
+        "repeated_calls": 3,
+        "call_status_timeout_count": 60
     },
     "car": {
-        "name": "virtual_vehicle_k8s"
+        "name": "virtual_vehicle"
     }
 }
