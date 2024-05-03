@@ -16,7 +16,7 @@ class NotificationClient:
         self._client = Client(self._account_sid, self._auth_token)
 
 
-    def call_phone(self, phone_number: str) -> None:
+    def call_phone(self, phone_number: str, under_test: bool) -> None:
         logging.info("Calling phone number: " + phone_number)
         # for _ in range(self._repeated_calls):
         #     sid = self._client.calls.create(

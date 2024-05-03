@@ -1,5 +1,4 @@
-import logging
-import threading
+import logging, threading, time, datetime
 
 from fleet_management_http_client_python import ApiClient, CarApi, OrderApi, OrderStateApi, OrderStatus
 from fleet_notifications.notifications_client import NotificationClient
@@ -12,7 +11,7 @@ def _get_car_id(car_name: str, api_client: ApiClient):
     for car in cars:
         if car.name == car_name:
             logging.info(f"Car found, ID: {car.id}")
-            return car.id, car.car_admin_phone.phone
+            return car.id, car.car_admin_phone.phone, car.under_test
     return 0, ""
 
 
@@ -21,7 +20,7 @@ def start(config: dict, api_client: ApiClient) -> None:
 
     # Get car ID
     logging.info(f"Car name: {config['car']['name']}")
-    car_id, admin_phone = _get_car_id(config['car']['name'], api_client)
+    car_id, admin_phone, under_test = _get_car_id(config['car']['name'], api_client)
     if car_id == 0:
         logging.error("Car not found.")
         return
@@ -47,28 +46,36 @@ def start(config: dict, api_client: ApiClient) -> None:
     while True:
         try:
             while car_id != 0:
-                logging.info(f"Checking order states since: {since+1}")
+                logging.info(
+                    f"Checking order states since: {since+1}  "
+                    f"{datetime.datetime.fromtimestamp((since+1)/1000).strftime('%Y-%m-%d %H:%M:%S')}"
+                )
                 states = order_state_api.get_all_order_states(wait=True, since=since+1)
 
                 for state in states:
-                    logging.info(f"Order state: {state.to_str()}")
+                    logging.info(f"New order state ID: {state.id} for order {state.order_id} with status {state.status.name}")
 
                     # Add order to the list if it is not there
                     order_count = len(orders)
                     if state.order_id not in orders:
-                        orders[state.order_id] = order_api.get_order(car_id=car_id, order_id=state.order_id)
+                        try:
+                            orders[state.order_id] = order_api.get_order(car_id=car_id, order_id=state.order_id)
+                        except:
+                            continue
 
                     # Mission started if there were no orders before
                     if (order_count == 0 and len(orders) > 0 and orders[state.order_id].last_state.status != OrderStatus.DONE and 
                         orders[state.order_id].last_state.status != OrderStatus.CANCELED):
                         logging.info(f"New mission started.")
-                        threading.Thread(target=notification_client.call_phone, args=(admin_phone)).start()
+                        threading.Thread(target=notification_client.call_phone, daemon=True, args=(admin_phone, under_test,)).start()
 
                     # Check if the order is done
                     if orders[state.order_id].last_state.status != OrderStatus.DONE and state.status == OrderStatus.DONE:
                         logging.info(f"Order {state.order_id} is done.")
                         orders[state.order_id] = order_api.get_order(car_id=car_id, order_id=state.order_id)
-                        threading.Thread(target=notification_client.call_phone, args=(orders[state.order_id].notification_phone.phone)).start()
+                        threading.Thread(target=notification_client.call_phone, daemon=True, args=(
+                            orders[state.order_id].notification_phone.phone, under_test,
+                        )).start()
 
                     # Update timestamp to the newest state
                     if state.timestamp > since:
@@ -80,7 +87,7 @@ def start(config: dict, api_client: ApiClient) -> None:
                     if order.last_state.status == OrderStatus.DONE or order.last_state.status == OrderStatus.CANCELED:
                         orders_to_remove.append(order.id)
                     else:
-                        update_order(order.id, order.last_state.timestamp)
+                        update_order(order.id, since)
                 for order_id in orders_to_remove:
                     orders.pop(order_id)
                     delete_order(order_id)
@@ -89,17 +96,8 @@ def start(config: dict, api_client: ApiClient) -> None:
             return
         except Exception as e:
             logging.error(f"Unknown error: {e}, restarting.")
-        car_id, admin_phone = _get_car_id(config['car']['name'], api_client)
+            time.sleep(2)
+        car_id, admin_phone, under_test = _get_car_id(config['car']['name'], api_client)
         if car_id == 0:
             logging.error("Car not found.")
             return
-
-
-
-# TODO test
-# load with empty database and no existing order - no action until an order is created
-# load with empty database and existing finished order - no action until a new order is created
-# load with empty database and existing unfinished order - no action until order is finished
-# load with order in database that no longer exists - no action
-# load with order in database that is finished - call station
-# load with order in database that is unfinished - no action until order is finished
