@@ -1,3 +1,14 @@
+setuptools >= 21.0.0
+APScheduler >= 3.10.0
+aenum == 3.1.15
+psycopg >= 3.1.0
+psycopg-binary
+pyyaml>=6.0.1
+coverage>=7.4.2
+pydantic >= 2.5.3
+python-dateutil>=2.8.0
+urllib3>=2.2.1
 fleet_management_http_client_python @ git+https://github.com/bringauto/fleet-management-http-client-python.git@v2.3.1
 SQLAlchemy >= 2.0.23
 twilio >= 9.0.5
+#TODO remove not needed ones

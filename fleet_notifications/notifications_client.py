@@ -17,22 +17,21 @@ class NotificationClient:
 
 
     def call_phone(self, phone_number: str, under_test: bool) -> None:
-        logging.info("Calling phone number: " + phone_number)
-        # for _ in range(self._repeated_calls):
-        #     sid = self._client.calls.create(
-        #         to=phone_number,
-        #         from_=self._from_number,
-        #         twiml=f'<Response><Play loop="10">{self._url}</Play></Response>'
-        #     )
-        #     if self._wait_for_pickup(sid):
-        #         break
-        time.sleep(10)
-        logging.info("Async debug ended.")
+        if under_test and phone_number != "": #TODO change to not under_test
+            logging.info("Calling phone number: " + phone_number)
+            for _ in range(self._repeated_calls):
+                sid = self._client.calls.create(
+                    to=phone_number,
+                    from_=self._from_number,
+                    twiml=f'<Response><Play loop="10">{self._url}</Play></Response>'
+                )
+                if self._wait_for_pickup(sid):
+                    break
 
 
-    def _wait_for_pickup(self, sid: str) -> bool:
-        logging.info("Waiting for pickup: " + sid)
-        call = self._client.calls.get(sid)
+    def _wait_for_pickup(self, sid: CallInstance) -> bool:
+        logging.info("Waiting for pickup: " + sid.sid)
+        call = self._client.calls.get(sid.sid)
         call_status = call.fetch().status
         timeout_count = 0
 
@@ -51,4 +50,7 @@ class NotificationClient:
                 logging.error("Call polling timed out.")
                 return True
 
+        if call_status == CallInstance.Status.FAILED:
+            logging.warning(f"Call: {sid.sid} failed.")
+            return True
         return call_status != CallInstance.Status.NO_ANSWER
