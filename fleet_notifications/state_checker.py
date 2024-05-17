@@ -12,7 +12,7 @@ def _get_car_id(car_name: str, api_client: ApiClient):
         if car.name == car_name:
             logging.info(f"Car found, ID: {car.id}")
             return car.id, car.car_admin_phone.phone, car.under_test
-    return 0, ""
+    return 0, "", True
 
 
 def start(config: dict, api_client: ApiClient) -> None:
@@ -61,7 +61,7 @@ def start(config: dict, api_client: ApiClient) -> None:
 
                     # Add order to the list if it is not there
                     order_count = len(orders)
-                    if state.order_id not in orders:
+                    if state.order_id not in orders or state.status == OrderStatus.CANCELED:
                         try:
                             orders[state.order_id] = order_api.get_order(car_id=car_id, order_id=state.order_id)
                         except:

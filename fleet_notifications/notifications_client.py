@@ -17,16 +17,19 @@ class NotificationClient:
 
 
     def call_phone(self, phone_number: str, under_test: bool) -> None:
-        if under_test and phone_number != "": #TODO change to not under_test
+        if not under_test and phone_number != "":
             logging.info("Calling phone number: " + phone_number)
-            for _ in range(self._repeated_calls):
-                sid = self._client.calls.create(
-                    to=phone_number,
-                    from_=self._from_number,
-                    twiml=f'<Response><Play loop="10">{self._url}</Play></Response>'
-                )
-                if self._wait_for_pickup(sid):
-                    break
+            try:
+                for _ in range(self._repeated_calls):
+                    sid = self._client.calls.create(
+                        to=phone_number,
+                        from_=self._from_number,
+                        twiml=f'<Response><Play loop="10">{self._url}</Play></Response>'
+                    )
+                    if self._wait_for_pickup(sid):
+                        break
+            except Exception as e:
+                logging.error(f"An error occured while handling a call to number {phone_number} : {e}")
 
 
     def _wait_for_pickup(self, sid: CallInstance) -> bool:
