@@ -21,6 +21,6 @@
         "call_status_timeout_count": 60
     },
     "car": {
-        "name": "virtual_vehicle_k8s"
+        "name": "virtual_vehicle"
     }
 }
