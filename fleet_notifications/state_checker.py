@@ -35,7 +35,8 @@ def start(config: dict, api_client: ApiClient) -> None:
     for order in db_orders:
         try:
             orders[order.id] = order_api.get_order(car_id=car_id, order_id=order.id)
-            orders[order.id].last_state.status = OrderStatus.IN_PROGRESS
+            # Currently disabled to not call on script restart
+            #orders[order.id].last_state.status = OrderStatus.IN_PROGRESS
         except Exception as e:
             logging.error(f"Error while getting order {order.id} from the api: {e}")
             delete_order(order.id)

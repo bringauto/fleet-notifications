@@ -5,7 +5,7 @@ Python script that generates notifications on state changes of Fleet Protocol de
 
 This script is responsible for calling the car admin number and the number assigned to stops. Car admins are called whenever a mission is started, stop numbers are called whenever a car reaches a stop.
 
-Order states from the [Fleet Management API](https://github.com/bringauto/fleet-management-http-api) are being checked constantly. If the received state belongs to a new order, the order gets saved locally until it is finished (this makes sure that the order continues where it left off, in case it needs to be restarted). If the newly saved order is the only one saved, the car admin phone is called. If a state has the status DONE, and the previous status was different, the phone number of the corresponding stop gets called.
+Order states from the [Fleet Management API](https://github.com/bringauto/fleet-management-http-api) are being checked constantly. If the received state belongs to a new order, the order gets saved locally until it is finished (this is currently only used to save the latest order state timestamp). If the newly saved order is the only one saved, the car admin phone is called. If a state has the status DONE, and the previous status was different, the phone number of the corresponding stop gets called.
 
 The following flow chart is a simplified version of the program logic:
 
