@@ -58,9 +58,6 @@ The settings can be found in the `config/config.json`, including the database in
         "play_sound_url": "https://bringauto.com/wp-content/uploads/2021/10/BringAuto.mp3",
         "repeated_calls": 3,
         "call_status_timeout_count": 60
-    },
-    "car": {
-        "name": "virtual_vehicle"
     }
 }
 ```
@@ -68,5 +65,3 @@ The settings can be found in the `config/config.json`, including the database in
 - twilio
   - repeated_calls: how many times a phone will be called until a call is picked up
   - call_status_timeout_count: how many times a call status should be polled until calling is given up on
-- car
-  - name: name of car in Fleet Management API

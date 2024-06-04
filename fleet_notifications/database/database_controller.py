@@ -9,6 +9,7 @@ _orders = Table(
     'orders', _meta,
     Column('id', Integer, primary_key=True),
     Column('order_id', Integer, unique=True),
+    Column('car_id', Integer),
     Column('timestamp', BigInteger)
 )
 
@@ -22,13 +23,13 @@ def create_orders_table() -> None:
         print(e)
 
 
-def update_order(order_id: int, timestamp: int) -> None:
+def update_order(order_id: int, car_id: int, timestamp: int) -> None:
     try:
         with get_connection_source().begin() as conn:
-            update = insert(_orders).values(order_id=order_id, timestamp=timestamp)
+            update = insert(_orders).values(order_id=order_id, car_id=car_id, timestamp=timestamp)
             update = update.on_conflict_do_update(
                 index_elements=['order_id'],
-                set_=dict(timestamp=timestamp)
+                set_=dict(car_id=car_id, timestamp=timestamp)
             )
             conn.execute(update)
     except Exception as e:
@@ -52,9 +53,8 @@ def get_orders() -> list[Order]:
             for order in orders:
                 ret_list.append(Order(
                     id=order[1],
-                    userId=0,
-                    timestamp=order[2],
-                    carId=0,
+                    timestamp=order[3],
+                    carId=[2],
                     targetStopId=0,
                     stopRouteId=0
                     ))
