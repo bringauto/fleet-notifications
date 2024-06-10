@@ -57,15 +57,24 @@ def start(config: dict, api_client: ApiClient) -> None:
                     continue
 
                 # Add order to the list if it is not there
-                order_count = len(orders)
+                no_active_order = True
+                for order in orders.values():
+                    if order.car_id == car_id:
+                        no_active_order = False
+                        break
                 if state.order_id not in orders or state.status == OrderStatus.CANCELED:
                     try:
                         orders[state.order_id] = order_api.get_order(car_id=car_id, order_id=state.order_id)
                     except:
                         continue
+                new_order_started = False
+                for order in orders.values():
+                    if order.car_id == car_id:
+                        new_order_started = True
+                        break
 
                 # Mission started if there were no orders before
-                if (order_count == 0 and len(orders) > 0 and orders[state.order_id].last_state.status != OrderStatus.DONE and 
+                if (no_active_order and new_order_started and orders[state.order_id].last_state.status != OrderStatus.DONE and 
                     orders[state.order_id].last_state.status != OrderStatus.CANCELED):
                     logging.info(f"New mission started.")
                     threading.Thread(target=notification_client.call_phone, daemon=True, args=(admin_phone, under_test,)).start()
