@@ -1,38 +1,40 @@
-import sys
-sys.path.append("fleet_notifications")
-import logging
+import threading
 
-from database.connection import set_db_connection
-from database.database_controller import create_orders_table
-import database.script_args as script_args  # type: ignore
-from state_checker import start
+import fleet_notifications.script_args as _args
+from fleet_notifications.database.connection import set_db_connection
+from fleet_notifications.database.database_controller import create_orders_table
+from fleet_notifications.state_checker import start
+from fleet_notifications.incoming_call_endpoint import run_app
+from fleet_notifications.logs import configure_logging
 from fleet_management_http_client_python import ApiClient, Configuration
 
 
-def _connect_to_database(vals: script_args.ScriptArgs) -> None:
+def _connect_to_database(connection: _args.Database.Connection) -> None:
     """Connect to the database."""
     set_db_connection(
-        dblocation = vals.argvals["location"] + ":" + str(vals.argvals["port"]),
-        username = vals.argvals["username"],
-        password = vals.argvals["password"],
-        db_name = vals.argvals["database_name"]
+        dblocation = connection.location + ":" + str(connection.port),
+        username = connection.username,
+        password = connection.password,
+        db_name = connection.database_name
     )
 
 
-def _set_up_log_format() -> None:
-    """Set up the logging format."""
-    FORMAT = '%(asctime)s -- %(message)s'
-    logging.basicConfig(format=FORMAT, level=logging.INFO)
-
-
 if __name__ == '__main__':
-    vals = script_args.request_and_get_script_arguments("Run the Fleet notifications script.")
-    config = vals.config
-    _set_up_log_format()
-    _connect_to_database(vals)
+    args = _args.request_and_get_script_arguments("Run the Fleet notifications script.")
+    
+    try:
+        configure_logging("Fleet Notifications", args.config)
+    except Exception as e:
+        print(f"Error when configuring logging: {e}")
+        exit(1)
+
+    config = args.config
+    _connect_to_database(config.database.connection)
     create_orders_table()
     api_client = ApiClient(Configuration(
-        host=config['fleet_management_server']['base_uri'],
-        api_key={'APIKeyAuth': config['fleet_management_server']['api_key']}
+        host=str(config.fleet_management_server.base_uri),
+        api_key={'APIKeyAuth': config.fleet_management_server.api_key}
     ))
-    start(config, api_client)
+    
+    threading.Thread(target=start, args=(config.twilio, api_client), daemon=True).start()
+    run_app(config.twilio, config.http_server, api_client)

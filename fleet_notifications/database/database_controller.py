@@ -1,4 +1,4 @@
-from database.connection import get_connection_source
+from fleet_notifications.database.connection import get_connection_source
 from sqlalchemy import MetaData ,Table, Column, Integer, BigInteger
 from sqlalchemy.dialects.postgresql import insert
 from fleet_management_http_client_python import Order
