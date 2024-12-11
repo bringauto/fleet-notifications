@@ -44,11 +44,11 @@ def handle_call():
 
         if action_status == CarActionStatus.PAUSED:
             _car_action_api.unpause_car(car_id)
-            resp.say(f"Car succesfully unpaused.")
+            resp.say("Car successfully unpaused.")
         else:
             _car_action_api.pause_car(car_id)
-            resp.say(f"Car succesfully paused.")
-    except:
+            resp.say("Car successfully paused.")
+    except Exception:
         resp.say("An error occured while handling the call.")
     
     return str(resp)

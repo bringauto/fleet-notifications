@@ -1,4 +1,4 @@
-import threading
+import sys, threading
 
 import fleet_notifications.script_args as _args
 from fleet_notifications.database.connection import set_db_connection
@@ -26,7 +26,7 @@ if __name__ == '__main__':
         configure_logging("Fleet Notifications", args.config)
     except Exception as e:
         print(f"Error when configuring logging: {e}")
-        exit(1)
+        sys.exit(1)
 
     config = args.config
     _connect_to_database(config.database.connection)
