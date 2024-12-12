@@ -37,6 +37,10 @@ The script automatically connects to the PostgreSQL database using data from the
 
 Note that these data should comply with the requirements specified in SQLAlchemy [documentation](https://docs.sqlalchemy.org/en/20/core/engines.html#database-urls).
 
+### Testing
+
+Testing has to be done manually. Described in [testing](./doc/testing.md).
+
 ### Configuration
 The settings can be found in the `config/config.json`, including the database information and parameters for Fleet management connection.
 
@@ -67,6 +71,7 @@ The settings can be found in the `config/config.json`, including the database in
         "play_sound_url": "https://bringauto.com/wp-content/uploads/2021/10/BringAuto.mp3",
         "repeated_calls": 3,
         "call_status_timeout_s": 120,
+        "car_action_change_timeout_s": 5,
         "allowed_incoming_phone_numbers": {
             "+420987654321": 1,
             "+420111111111": 5
@@ -89,7 +94,8 @@ The settings can be found in the `config/config.json`, including the database in
   - from_number: twilio phone number used for notifications and stopping the car
   - play_sound_url: url of a sound file to be played in notifications
   - repeated_calls: how many times a phone will be called until a call is picked up
-  - call_status_timeout_count_s: how much time should pass for a call to be considered timeouted
+  - call_status_timeout_s: how much time should pass for a call to be considered timeouted
+  - car_action_change_timeout_s: how much time should pass before a car should change actions reliably
   - allowed_incoming_phone_numbers: which phone numbers are allowed to pause/unpause the car with an assigned id
 
 
