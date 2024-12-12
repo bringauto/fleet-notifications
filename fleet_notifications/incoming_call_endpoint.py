@@ -48,8 +48,8 @@ def validate_twilio_request(f):
     def decorated_function(*args, **kwargs):
         validator = RequestValidator(_twilio_auth_token)
         request_valid = validator.validate(
-            #request.url,
-            request.url.replace('http://', 'https://'), # use this when running locally
+            request.url,
+            #request.url.replace('http://', 'https://'), # use this when running locally
             request.form,
             request.headers.get('X-Twilio-Signature', ''))
         if request_valid and request.values['From'] in _allowed_incoming_phone_numbers.keys():

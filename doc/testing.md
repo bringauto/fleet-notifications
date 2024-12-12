@@ -15,4 +15,5 @@
   - `allowed_incoming_phone_numbers` in `twilio` needs to be set with your phone number as the key and car id as the value (car id should be 1 in etna by default, this can be forced by purging the database with `docker compose --profile=all down`)
 - run the script by `python3 -m fleet_notifications <path-to-config-file>`
 - try calling the twilio phone number to see if it forces the car to pause/unpause (car position can be displayed in a browser at http://localhost:5000)
+  - if the request fails because of an invalid url comment out line 51 in `incoming_call_endpoint.py` and uncomment line 52
   
