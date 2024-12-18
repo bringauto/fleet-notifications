@@ -55,7 +55,8 @@ class NotificationClient:
 
 
     def _wait_for_pickup(self, sid: CallInstance) -> bool:
-        """Returns true if the call was picked up within a certain time frame, false otherwise."""
+        """Returns true if the call was picked up within a certain time frame, and if polling twilio timeouts.
+        Otherwise returns false."""
         logger.info("Waiting for pickup: " + sid.sid)
         call = self._client.calls.get(sid.sid)
         call_status = call.fetch().status

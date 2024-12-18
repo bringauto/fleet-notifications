@@ -75,8 +75,9 @@ class OrderStateChecker:
     def _remove_finished_orders(self) -> None:
         """Removes finished orders from the list and the database."""
         finished_orders = [order for order in self.orders.values() if self._is_order_finished(order)]
+        active_orders = self.order_api.get_orders()
         deleted_orders = [
-            order for order in self.orders.values() if order not in self.order_api.get_orders()
+            order for order in self.orders.values() if order not in active_orders
         ]
         for order in finished_orders + deleted_orders:
             self.orders.pop(order.id)
