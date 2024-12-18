@@ -1,5 +1,5 @@
 import dataclasses
-from typing import Any
+from typing import Any, Union
 import argparse
 import json
 
@@ -7,7 +7,7 @@ from fleet_notifications.script_args.configs import ScriptConfig as _ScriptConfi
 import logging
 
 
-_EMPTY_VALUE = None
+_EMPTY_VALUE: None = None
 
 
 @dataclasses.dataclass
@@ -19,7 +19,7 @@ class PositionalArgInfo:
 
 @dataclasses.dataclass(frozen=True)
 class ScriptArgs:
-    argvals: dict[str, str]
+    argvals: dict[str, str | bool]
     config: _ScriptConfig
 
 

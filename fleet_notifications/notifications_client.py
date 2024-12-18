@@ -1,7 +1,7 @@
 import logging, time
 
-from twilio.rest import Client
-from twilio.rest.api.v2010.account.call import CallInstance
+from twilio.rest import Client # type: ignore
+from twilio.rest.api.v2010.account.call import CallInstance # type: ignore
 from fleet_notifications.script_args.configs import Twilio
 from fleet_notifications.logs import LOGGER_NAME
 

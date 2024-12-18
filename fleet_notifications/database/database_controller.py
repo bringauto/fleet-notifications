@@ -2,7 +2,7 @@ from fleet_notifications.script_args import Database as _db_args
 from fleet_notifications.database.connection import get_connection_source, set_db_connection
 from sqlalchemy import MetaData ,Table, Column, Integer, BigInteger
 from sqlalchemy.dialects.postgresql import insert
-from fleet_management_http_client_python import Order
+from fleet_management_http_client_python import Order # type: ignore
 
 
 _meta = MetaData()

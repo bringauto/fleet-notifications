@@ -2,10 +2,10 @@ import logging, time
 
 from flask import abort, Flask, request
 from functools import wraps
-from twilio.twiml.voice_response import VoiceResponse
-from twilio.request_validator import RequestValidator
+from twilio.twiml.voice_response import VoiceResponse # type: ignore
+from twilio.request_validator import RequestValidator # type: ignore
 from fleet_notifications.script_args.configs import Twilio, HTTPServer
-from fleet_management_http_client_python import ApiClient, CarActionApi, CarStateApi, CarActionStatus, CarStatus
+from fleet_management_http_client_python import ApiClient, CarActionApi, CarStateApi, CarActionStatus, CarStatus # type: ignore
 from fleet_notifications.logs import LOGGER_NAME
 
 
