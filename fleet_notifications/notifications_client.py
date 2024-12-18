@@ -42,7 +42,7 @@ class NotificationClient:
                 logger.error(f"An error occured while handling a call to number {phone_number} : {e}")
 
 
-    def _is_call_picked_up(call_status: CallInstance.Status) -> bool:
+    def _is_call_picked_up(self, call_status: CallInstance.Status) -> bool:
         """Returns true if the call was picked up, false otherwise."""
         if(call_status == CallInstance.Status.IN_PROGRESS or
            call_status == CallInstance.Status.COMPLETED or
