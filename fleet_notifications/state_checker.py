@@ -35,7 +35,7 @@ class OrderStateChecker:
     
 
     def _check_if_order_is_new(self, car_id: int, state: OrderState, admin_phone: str, under_test: bool) -> None:
-        """Adds the order belionging to the state to the list of orders. If the order is the first new one,
+        """Adds the order belonging to the state to the list of orders. If the order is the first new one,
         a notification is sent to the admin phone number. Returns false if the order can't be retrieved."""
         no_active_order = True
         for order in self.orders.values():
