@@ -19,12 +19,27 @@ This script also contains an HTTP endpoint for to serve as a webhook for inconmi
 Python 3.10.12+
 
 ## Usage
+
+Activate virtual environment and install dependencies.
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip3 install -r requirements.txt
+```
+
 To run the script execute the following from the root directory:
 
 ```bash
-pip3 install -r requirements.txt
 python3 -m fleet_notifications <path-to-config-file> [OPTIONS]
 ```
+
+Command line options:
+
+| Option         | Description                                          |
+|----------------|------------------------------------------------------|
+| `--allow-http` | Enable twilio validation on URLs that are not secure |
+
 The script automatically connects to the PostgreSQL database using data from the config file. If you want to override these values, start the server with some of the following options:
 
 | Option            | Short  | Description                                  |

@@ -1,4 +1,5 @@
-from fleet_notifications.database.connection import get_connection_source
+from fleet_notifications.script_args import Database as _db_args
+from fleet_notifications.database.connection import get_connection_source, set_db_connection
 from sqlalchemy import MetaData ,Table, Column, Integer, BigInteger
 from sqlalchemy.dialects.postgresql import insert
 from fleet_management_http_client_python import Order
@@ -14,7 +15,13 @@ _orders = Table(
 )
 
 
-def create_orders_table() -> None:
+def initialize_db(connection: _db_args.Connection) -> None:
+    set_db_connection(
+        dblocation = connection.location + ":" + str(connection.port),
+        username = connection.username,
+        password = connection.password,
+        db_name = connection.database_name
+    )
     try:
         print("Creating orders table")
         with get_connection_source().begin() as conn:

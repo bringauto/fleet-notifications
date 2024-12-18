@@ -9,93 +9,115 @@ from fleet_management_http_client_python import ApiClient, CarActionApi, CarStat
 from fleet_notifications.logs import LOGGER_NAME
 
 
+WAITING_TIME_PERIOD = 1
 logger = logging.getLogger(LOGGER_NAME)
 
-
-app = Flask(__name__)
-_twilio_auth_token = ""
-_allowed_incoming_phone_numbers = dict()
-_car_action_api = None
-_car_state_api = None
-_action_timeout_s = 0
+flask_app = Flask(__name__)
 
 
-def wait_for_action_status(statuses: list, car_id: int) -> bool:
-    """Wait for the car action status to change to the specified status"""
-    timeout_count = 0
-    while _car_action_api.get_car_action_states(car_id, last_n=1)[0].action_status not in statuses:
-        time.sleep(1)
-        timeout_count += 1
-        if timeout_count > _action_timeout_s:
-            return False
-    return True
+class FlaskAppWrapper(object):
+    def __init__(self, app, **configs):
+        self.app = app
+        self.configs(**configs)
+
+    def configs(self, **configs):
+        for config, value in configs:
+            self.app.config[config.upper()] = value
+
+    def add_endpoint(self, endpoint=None, endpoint_name=None, handler=None, methods=['GET'], *args, **kwargs):
+        self.app.add_url_rule(endpoint, endpoint_name, handler, methods=methods, *args, **kwargs)
+
+    def run(self, **kwargs):
+        self.app.run(**kwargs)
 
 
-def wait_for_car_status(statuses: list, car_id: int) -> bool:
-    """Wait for the car status to change to the specified status"""
-    timeout_count = 0
-    while _car_state_api.get_car_states(car_id, last_n=1)[0].status not in statuses:
-        time.sleep(1)
-        timeout_count += 1
-        if timeout_count > _action_timeout_s:
-            return False
-    return True
+class IncomingCallHandler:
+    def __init__(self, twilio_config: Twilio, server_config: HTTPServer, api_client: ApiClient, allow_http: bool):
+        self.twilio_auth_token = twilio_config.auth_token
+        self.allowed_incoming_phone_numbers = twilio_config.allowed_incoming_phone_numbers
+        self.action_timeout_s = twilio_config.car_action_change_timeout_s
+        self.car_action_api = CarActionApi(api_client)
+        self.car_state_api = CarStateApi(api_client)
+        self.server_port = server_config.port
+        self.allow_http = allow_http
 
 
-def validate_twilio_request(f):
-    """Validates that incoming requests genuinely originated from Twilio"""
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        validator = RequestValidator(_twilio_auth_token)
-        request_valid = validator.validate(
-            request.url,
-            #request.url.replace('http://', 'https://'), # use this when running locally
-            request.form,
-            request.headers.get('X-Twilio-Signature', ''))
-        if request_valid and request.values['From'] in _allowed_incoming_phone_numbers.keys():
-            return f(*args, **kwargs)
-        else:
-            return abort(403)
-    return decorated_function
+    def _car_action_status_occurred(self, awaited_statuses: set[CarActionStatus], car_id: int) -> bool:
+        """Wait for the action status of the car with ID equal to car_id to change to one of the specified statuses.
+        The set of awaited statuses must not be empty. Return True if the awaited status occured before timeout,
+        False otherwise."""
+        timeout_count = 0
+        while self.car_action_api.get_car_action_states(car_id, last_n=1)[0].action_status not in awaited_statuses:
+            time.sleep(WAITING_TIME_PERIOD)
+            timeout_count += WAITING_TIME_PERIOD
+            if timeout_count > self.action_timeout_s:
+                return False
+        return True
 
 
-# https://www.twilio.com/docs/voice/twiml/gather
-# gather (twiml) can be used to collect dtmf presses during a call
-# we can use this to select car ids if a number should have access to multiple cars
-@app.route("/handle-call", methods=['GET', 'POST'])
-@validate_twilio_request
-def handle_call():
-    """Handle incoming calls from Twilio"""
-    resp = VoiceResponse()
-    
-    try:
-        car_id = _allowed_incoming_phone_numbers[request.values['From']]
-        action_status = _car_action_api.get_car_action_states(car_id, last_n=1)[0].action_status
-
-        if action_status == CarActionStatus.PAUSED:
-            _car_action_api.unpause_car(car_id)
-            if not wait_for_action_status([CarActionStatus.NORMAL], car_id):
-                raise Exception("Car did not enter NORMAL action state in time.")
-            resp.say("Car successfully unpaused.")
-        else:
-            _car_action_api.pause_car(car_id)
-            if not wait_for_action_status([CarActionStatus.PAUSED], car_id):
-                raise Exception("Car did not enter PAUSED action state in time.")
-            if not wait_for_car_status([CarStatus.IDLE, CarStatus.OUT_OF_ORDER], car_id):
-                raise Exception("Car did not enter IDLE state in time.")
-            resp.say("Car successfully paused.")
-    except Exception as e:
-        logger.error(e)
-        resp.say("An error occured while handling the call.")
-    
-    return str(resp)
+    def _car_status_occured(self, awaited_statuses: set[CarStatus], car_id: int) -> bool:
+        """Wait for the status of the car with ID equal to car_id to change to one of the specified statuses.
+        The set of awaited statuses must not be empty. Return True if the awaited status occured before timeout,
+        False otherwise."""
+        timeout_count = 0
+        while self.car_state_api.get_car_states(car_id, last_n=1)[0].status not in awaited_statuses:
+            time.sleep(WAITING_TIME_PERIOD)
+            timeout_count += WAITING_TIME_PERIOD
+            if timeout_count > self.action_timeout_s:
+                return False
+        return True
 
 
-def run_app(twilio_config: Twilio, server_config: HTTPServer, api_client: ApiClient):
-    global _twilio_auth_token, _allowed_incoming_phone_numbers, _car_action_api, _car_state_api, _action_timeout_s
-    _twilio_auth_token = twilio_config.auth_token
-    _allowed_incoming_phone_numbers = twilio_config.allowed_incoming_phone_numbers
-    _action_timeout_s = twilio_config.car_action_change_timeout_s
-    _car_action_api = CarActionApi(api_client)
-    _car_state_api = CarStateApi(api_client)
-    app.run(port=server_config.port)
+    @staticmethod
+    def _validate_twilio_request(f):
+        """Validates that incoming requests genuinely originated from Twilio"""
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            call_handler = args[0]
+            url = request.url
+            if call_handler.allow_http:
+                url = url.replace('http://', 'https://')
+            validator = RequestValidator(call_handler.twilio_auth_token)
+            request_valid = validator.validate(
+                url,
+                request.form,
+                request.headers.get('X-Twilio-Signature', ''))
+            if request_valid and request.values['From'] in call_handler.allowed_incoming_phone_numbers.keys():
+                return f(*args, **kwargs)
+            else:
+                return abort(403)
+        return decorated_function
+
+
+    @_validate_twilio_request
+    def _handle_call(self):
+        """Handle incoming calls from Twilio"""
+        resp = VoiceResponse()
+
+        try:
+            car_id = self.allowed_incoming_phone_numbers[request.values['From']]
+            action_status = self.car_action_api.get_car_action_states(car_id, last_n=1)[0].action_status
+
+            if action_status == CarActionStatus.PAUSED:
+                self.car_action_api.unpause_car(car_id)
+                if not self._car_action_status_occurred([CarActionStatus.NORMAL], car_id):
+                    raise Exception("Car did not enter NORMAL action state in time.")
+                resp.say("Car successfully unpaused.")
+            else:
+                self.car_action_api.pause_car(car_id)
+                if not self._car_action_status_occurred([CarActionStatus.PAUSED], car_id):
+                    raise Exception("Car did not enter PAUSED action state in time.")
+                if not self._car_status_occured([CarStatus.IDLE, CarStatus.OUT_OF_ORDER], car_id):
+                    raise Exception("Car did not enter IDLE state in time.")
+                resp.say("Car successfully paused.")
+        except Exception as e:
+            logger.error(e)
+            resp.say("An error occured while handling the call.")
+        
+        return str(resp)
+
+
+    def run_app(self):
+        app = FlaskAppWrapper(flask_app)
+        app.add_endpoint("/handle-call", "handle_call", self._handle_call, methods=['GET', 'POST'])
+        app.run(port=self.server_port)

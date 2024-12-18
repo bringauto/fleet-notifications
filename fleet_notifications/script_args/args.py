@@ -58,6 +58,7 @@ def _add_db_args_to_parser(parser: argparse.ArgumentParser) -> None:
     _add_str_option(parser, "-l", "--location", "The location/address of the database")
     _add_str_option(parser, "-p", "--port", "The database port number.")
     _add_str_option(parser, "-db", "--database-name", "The name of the database.")
+    parser.add_argument("--allow-http", action="store_true", help="Allow HTTP URLs in twilio validation.")
 
 
 def _add_str_option(
