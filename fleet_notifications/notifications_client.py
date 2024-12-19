@@ -1,26 +1,36 @@
-import logging
-import time
+import logging, time
 
-from twilio.rest import Client
-from twilio.rest.api.v2010.account.call import CallInstance
+from twilio.rest import Client # type: ignore
+from twilio.rest.api.v2010.account.call import CallInstance # type: ignore
+from fleet_notifications.script_args.configs import Twilio
+from fleet_notifications.logs import LOGGER_NAME
+
+
+PICK_UP_WAIT_INTERVAL = 2
+logger = logging.getLogger(LOGGER_NAME)
 
 
 class NotificationClient:
-    def __init__(self, config: dict):
-        self._account_sid = config["account_sid"]
-        self._auth_token = config["auth_token"]
-        self._from_number = config["from_number"]
-        self._url = config["play_sound_url"]
-        self._repeated_calls = config["repeated_calls"]
-        self._call_status_timeout_count = config["call_status_timeout_count"]
+    def __init__(self, twilio_config: Twilio):
+        self._account_sid = twilio_config.account_sid
+        self._auth_token = twilio_config.auth_token
+        self._from_number = twilio_config.from_number
+        self._url = twilio_config.play_sound_url
+        self._n_of_repeated_calls = twilio_config.repeated_calls
+        self._call_status_timeout_s = twilio_config.call_status_timeout_s
         self._client = Client(self._account_sid, self._auth_token)
 
 
     def call_phone(self, phone_number: str, under_test: bool) -> None:
-        if not under_test and phone_number != "":
-            logging.info("Calling phone number: " + phone_number)
+        """Calls the provided phone number and plays a sound. If the call is not picked up, it will be repeated."""
+        if not under_test:
+            if phone_number == "":
+                logger.warning("No phone number provided.")
+                return
+
+            logger.info("Calling phone number: " + phone_number)
             try:
-                for _ in range(self._repeated_calls):
+                for _ in range(self._n_of_repeated_calls):
                     sid = self._client.calls.create(
                         to=phone_number,
                         from_=self._from_number,
@@ -29,31 +39,38 @@ class NotificationClient:
                     if self._wait_for_pickup(sid):
                         break
             except Exception as e:
-                logging.error(f"An error occured while handling a call to number {phone_number} : {e}")
+                logger.error(f"An error occured while handling a call to number {phone_number} : {e}")
+
+
+    def _is_call_picked_up(self, call_status: CallInstance.Status) -> bool:
+        """Returns true if the call was picked up, false otherwise."""
+        if(call_status == CallInstance.Status.IN_PROGRESS or
+           call_status == CallInstance.Status.COMPLETED or
+           call_status == CallInstance.Status.BUSY or
+           call_status == CallInstance.Status.NO_ANSWER or
+           call_status == CallInstance.Status.CANCELED or
+           call_status == CallInstance.Status.FAILED):
+            return True
+        return False
 
 
     def _wait_for_pickup(self, sid: CallInstance) -> bool:
-        logging.info("Waiting for pickup: " + sid.sid)
+        """Returns true if the call was picked up within a certain time frame, and if polling twilio timeouts.
+        Otherwise returns false."""
+        logger.info("Waiting for pickup: " + sid.sid)
         call = self._client.calls.get(sid.sid)
         call_status = call.fetch().status
         timeout_count = 0
 
-        while (
-            call_status != CallInstance.Status.IN_PROGRESS and
-            call_status != CallInstance.Status.COMPLETED and
-            call_status != CallInstance.Status.BUSY and
-            call_status != CallInstance.Status.NO_ANSWER and
-            call_status != CallInstance.Status.CANCELED and
-            call_status != CallInstance.Status.FAILED
-        ):
-            time.sleep(2)
+        while (not self._is_call_picked_up(call_status)):
+            time.sleep(PICK_UP_WAIT_INTERVAL)
             call_status = call.fetch().status
-            timeout_count += 1
-            if timeout_count > self._call_status_timeout_count:
-                logging.error("Call polling timed out.")
+            timeout_count += PICK_UP_WAIT_INTERVAL
+            if timeout_count > self._call_status_timeout_s:
+                logger.error("Call polling timed out.")
                 return True
 
         if call_status == CallInstance.Status.FAILED:
-            logging.warning(f"Call: {sid.sid} failed.")
+            logger.warning(f"Call: {sid.sid} failed.")
             return True
         return call_status != CallInstance.Status.NO_ANSWER

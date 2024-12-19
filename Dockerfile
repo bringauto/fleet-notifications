@@ -1,16 +1,16 @@
-FROM python:3.10-alpine
+FROM bringauto/python-environment:latest
 
-RUN mkdir -p /usr/src/app
-WORKDIR /usr/src/app
+WORKDIR /home/bringauto
 
-COPY ./requirements.txt /usr/src/app/
+COPY ./requirements.txt /home/bringauto
+RUN "$PYTHON_ENVIRONMENT_PYTHON3" -m pip install --no-cache-dir -r requirements.txt
 
-RUN apk add --no-cache git
-RUN pip3 install --no-cache-dir -r requirements.txt
-
-COPY . /usr/src/app
+COPY config /home/bringauto/config
+COPY fleet_notifications /home/bringauto/fleet_notifications
 
 EXPOSE 8080
 
-ENTRYPOINT ["python3"]
-CMD ["-m", "fleet_notifications", "config/config.json"]
+RUN mkdir /home/bringauto/log
+
+ENTRYPOINT ["bash", "-c", "$PYTHON_ENVIRONMENT_PYTHON3 -m fleet_notifications $0 $@"]
+CMD ["config/config.json"]
