@@ -1,5 +1,5 @@
 import dataclasses
-from typing import Any, Union
+from typing import Any
 import argparse
 import json
 
