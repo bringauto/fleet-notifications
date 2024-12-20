@@ -111,7 +111,7 @@ class IncomingCallHandler:
                     raise Exception("Car did not enter IDLE state in time.")
                 resp.say("Car successfully paused.")
         except Exception as e:
-            logger.error(e)
+            logger.error(f"An error occured while handling a call: {e}", exc_info=True)
             resp.say("An error occured while handling the call.")
         
         return str(resp)
@@ -120,4 +120,4 @@ class IncomingCallHandler:
     def run_app(self):
         app = FlaskAppWrapper(flask_app)
         app.add_endpoint("/handle-call", "handle_call", self._handle_call, methods=['GET', 'POST'])
-        app.run(port=self.server_port)
+        app.run(host='0.0.0.0', port=self.server_port)
