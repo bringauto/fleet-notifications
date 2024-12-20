@@ -61,7 +61,11 @@ class OrderStateChecker:
         """Checks if the order is newly done and sends a notification to the phone number in the order."""
         if self.orders[state.order_id].last_state.status != OrderStatus.DONE and state.status == OrderStatus.DONE:
             logger.info(f"Order {state.order_id} is done.")
-            self.orders[state.order_id] = self.order_api.get_order(car_id=car_id, order_id=state.order_id)
+            try:
+                self.orders[state.order_id] = self.order_api.get_order(car_id=car_id, order_id=state.order_id)
+            except Exception as e:
+                logger.error(f"Error while getting order with ID {state.order_id} from the api: {e}")
+                return
 
             notification_phone = self.orders[state.order_id].notification_phone
             if(notification_phone is None):
@@ -113,7 +117,7 @@ class OrderStateChecker:
                 logger.info("Exiting the script.")
                 return
             except Exception as e:
-                logger.error(f"Unknown error: {e}, restarting.")
+                logger.error(f"Unknown error: {e}, restarting.", exc_info=True)
                 time.sleep(THREAD_RESTART_DELAY)
 
 

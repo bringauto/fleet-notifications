@@ -111,7 +111,7 @@ class IncomingCallHandler:
                     raise Exception("Car did not enter IDLE state in time.")
                 resp.say("Car successfully paused.")
         except Exception as e:
-            logger.error(e)
+            logger.error(f"An error occured while handling a call: {e}", exc_info=True)
             resp.say("An error occured while handling the call.")
         
         return str(resp)
