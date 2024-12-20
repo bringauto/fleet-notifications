@@ -120,4 +120,4 @@ class IncomingCallHandler:
     def run_app(self):
         app = FlaskAppWrapper(flask_app)
         app.add_endpoint("/handle-call", "handle_call", self._handle_call, methods=['GET', 'POST'])
-        app.run(port=self.server_port)
+        app.run(host='0.0.0.0', port=self.server_port)
