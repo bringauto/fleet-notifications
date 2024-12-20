@@ -1,5 +1,10 @@
 # Fleet notifications
 
+This script contains serves 2 functions:
+- [Notifying](#notifications) relevant numbers about car activity
+- [Handling incoming calls](#twilio-endpoint) to a twilio number in order to pause/unpause a car
+
+### Notifications
 
 Python script that generates notifications on state changes of Fleet Protocol devices.
 
@@ -83,13 +88,17 @@ The settings can be found in the `config/config.json`, including the database in
         "account_sid": "",
         "auth_token": "",
         "from_number": "+420123456789",
-        "play_sound_url": "https://bringauto.com/wp-content/uploads/2021/10/BringAuto.mp3",
-        "repeated_calls": 3,
-        "call_status_timeout_s": 120,
-        "car_action_change_timeout_s": 5,
-        "allowed_incoming_phone_numbers": {
-            "+420987654321": 1,
-            "+420111111111": 5
+        "notifications": {
+            "play_sound_url": "https://bringauto.com/wp-content/uploads/2021/10/BringAuto.mp3",
+            "repeated_calls": 3,
+            "call_status_timeout_s": 120
+        },
+        "call_handling": {
+            "car_action_change_timeout_s": 5,
+            "allowed_incoming_phone_numbers": {
+                "+420987654321": 1,
+                "+420111111111": 5
+            }
         }
     },
     "database": {

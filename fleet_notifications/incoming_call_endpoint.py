@@ -34,8 +34,8 @@ class FlaskAppWrapper(object):
 class IncomingCallHandler:
     def __init__(self, twilio_config: Twilio, server_config: HTTPServer, api_client: ApiClient, allow_http: bool):
         self.twilio_auth_token = twilio_config.auth_token
-        self.allowed_incoming_phone_numbers = twilio_config.allowed_incoming_phone_numbers
-        self.action_timeout_s = twilio_config.car_action_change_timeout_s
+        self.allowed_incoming_phone_numbers = twilio_config.call_handling.allowed_incoming_phone_numbers
+        self.action_timeout_s = twilio_config.call_handling.car_action_change_timeout_s
         self.car_action_api = CarActionApi(api_client)
         self.car_state_api = CarStateApi(api_client)
         self.server_port = server_config.port

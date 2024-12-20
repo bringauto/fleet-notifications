@@ -15,9 +15,9 @@ class NotificationClient:
         self._account_sid = twilio_config.account_sid
         self._auth_token = twilio_config.auth_token
         self._from_number = twilio_config.from_number
-        self._url = twilio_config.play_sound_url
-        self._n_of_repeated_calls = twilio_config.repeated_calls
-        self._call_status_timeout_s = twilio_config.call_status_timeout_s
+        self._url = twilio_config.notifications.play_sound_url
+        self._n_of_repeated_calls = twilio_config.notifications.repeated_calls
+        self._call_status_timeout_s = twilio_config.notifications.call_status_timeout_s
         self._client = Client(self._account_sid, self._auth_token)
 
 

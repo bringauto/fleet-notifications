@@ -43,11 +43,17 @@ class Twilio(pydantic.BaseModel):
     account_sid: str
     auth_token: str
     from_number: str
-    play_sound_url: pydantic.AnyUrl
-    repeated_calls: pydantic.PositiveInt
-    call_status_timeout_s: pydantic.PositiveInt
-    car_action_change_timeout_s: pydantic.PositiveInt
-    allowed_incoming_phone_numbers: dict[str, pydantic.PositiveInt]
+    notifications: Notifications
+    call_handling: CallHandling
+
+    class Notifications(pydantic.BaseModel):
+        play_sound_url: pydantic.AnyUrl
+        repeated_calls: pydantic.PositiveInt
+        call_status_timeout_s: pydantic.PositiveInt
+
+    class CallHandling(pydantic.BaseModel):
+        car_action_change_timeout_s: pydantic.PositiveInt
+        allowed_incoming_phone_numbers: dict[str, pydantic.PositiveInt]
 
 
 class Database(pydantic.BaseModel):
