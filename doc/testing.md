@@ -8,7 +8,7 @@
   - after installing, run it with `ngrok http <port>` (port is 8082 in the example config)
 - set the address of the reverse proxy as a webhook for the required twilio number
   - [list of phone numbers](https://console.twilio.com/us1/develop/phone-numbers/manage/incoming)
-  - in voice configuration of the required number, set a webhook url to `<reverse proxy address>/handle-call`
+  - in voice configuration of the required number, set a webhook url to `<reverse proxy address>/v2/notifications/handle-call`
 - create a valid config file (the config.json file is already mostly setup for running locally with etna)
   - in `twilio`, set `from_number` to the number that was configured in the previous step
   - `account_sid` and `auth_token` in `twilio` can be found [here](https://console.twilio.com/us1/account/keys-credentials/api-keys)
