@@ -78,14 +78,14 @@ class OrderStateChecker:
 
     def _remove_finished_orders(self) -> None:
         """Removes finished orders from the list and the database."""
-        finished_orders = [order for order in self.orders.values() if self._is_order_finished(order)]
-        active_orders = self.order_api.get_orders()
-        deleted_orders = [
-            order for order in self.orders.values() if order not in active_orders
+        finished_order_ids = [order.id for order in self.orders.values() if self._is_order_finished(order)]
+        active_order_ids = [order.id for order in self.order_api.get_orders()]
+        deleted_order_ids = [
+            order.id for order in self.orders.values() if order.id not in active_order_ids
         ]
-        for order in finished_orders + deleted_orders:
-            self.orders.pop(order.id)
-            notifications_db.delete_order(order.id)
+        for order_id in finished_order_ids + deleted_order_ids:
+            self.orders.pop(order_id)
+            notifications_db.delete_order(order_id)
 
 
     def _update_latest_timestamps(self, since: int) -> None:
@@ -139,7 +139,7 @@ class OrderStateChecker:
             except:
                 logger.error(f"Car not found: {order.car_id}")
                 continue
-            phone = "" if car.car_admin_phone is None else car.car_admin_phone
+            phone = "" if car.car_admin_phone.phone is None else car.car_admin_phone.phone
             if self._check_if_order_is_new(car.id, state, phone, car.under_test):
                 self._call_phone_if_order_is_done(car.id, state, car.under_test)
 
