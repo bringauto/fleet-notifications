@@ -96,8 +96,8 @@ The settings can be found in the `config/config.json`, including the database in
         "call_handling": {
             "car_action_change_timeout_s": 5,
             "allowed_incoming_phone_numbers": {
-                "+420987654321": 1,
-                "+420111111111": 5
+                "+420987654321": "virtual_vehicle",
+                "+420111111111": "bap2019_01"
             }
         }
     },
@@ -120,7 +120,7 @@ The settings can be found in the `config/config.json`, including the database in
   - repeated_calls: how many times a phone will be called until a call is picked up
   - call_status_timeout_s: how much time should pass for a call to be considered timeouted
   - car_action_change_timeout_s: how much time should pass before a car should change actions reliably
-  - allowed_incoming_phone_numbers: which phone numbers are allowed to pause/unpause the car with an assigned id
+  - allowed_incoming_phone_numbers: which phone numbers are allowed to pause/unpause the car with an assigned name
 
 
   [Fleet Management API]: https://github.com/bringauto/fleet-management-http-api

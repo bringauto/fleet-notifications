@@ -53,7 +53,7 @@ class Twilio(pydantic.BaseModel):
 
     class CallHandling(pydantic.BaseModel):
         car_action_change_timeout_s: pydantic.PositiveInt
-        allowed_incoming_phone_numbers: dict[str, pydantic.PositiveInt]
+        allowed_incoming_phone_numbers: dict[str, str]
 
 
 class Database(pydantic.BaseModel):

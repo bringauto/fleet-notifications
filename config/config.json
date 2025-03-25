@@ -29,8 +29,8 @@
         "call_handling": {
             "car_action_change_timeout_s": 5,
             "allowed_incoming_phone_numbers": {
-                "+123456789": 1,
-                "+987654321": 15
+                "+123456789": "virtual_vehicle",
+                "+987654321": "bap2019_01"
             }
         }
     },
