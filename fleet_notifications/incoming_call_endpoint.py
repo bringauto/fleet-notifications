@@ -15,6 +15,13 @@ logger = logging.getLogger(LOGGER_NAME)
 flask_app = Flask(__name__)
 
 
+class InvalidCarName(Exception):
+    pass
+
+class StateSwitchTimeout(Exception):
+    pass
+
+
 class FlaskAppWrapper(object):
     def __init__(self, app, **configs):
         self.app = app
@@ -74,7 +81,7 @@ class IncomingCallHandler:
         for car in self.car_api.get_cars():
             if car.name == name:
                 return car.id
-        raise Exception(f"Car with name: {id} not found.")
+        raise InvalidCarName(f"Car with name: {name} not found.")
 
 
     @staticmethod
@@ -110,14 +117,14 @@ class IncomingCallHandler:
             if action_status == CarActionStatus.PAUSED:
                 self.car_action_api.unpause_car(car_id)
                 if not self._car_action_status_occurred([CarActionStatus.NORMAL], car_id):
-                    raise Exception("Car did not enter NORMAL action state in time.")
+                    raise StateSwitchTimeout("Car did not enter NORMAL action state in time.")
                 resp.say("Car successfully unpaused.")
             else:
                 self.car_action_api.pause_car(car_id)
                 if not self._car_action_status_occurred([CarActionStatus.PAUSED], car_id):
-                    raise Exception("Car did not enter PAUSED action state in time.")
+                    raise StateSwitchTimeout("Car did not enter PAUSED action state in time.")
                 if not self._car_status_occured([CarStatus.IDLE, CarStatus.OUT_OF_ORDER], car_id):
-                    raise Exception("Car did not enter IDLE state in time.")
+                    raise StateSwitchTimeout("Car did not enter IDLE state in time.")
                 resp.say("Car successfully paused.")
         except Exception as e:
             logger.error(f"An error occured while handling a call: {e}", exc_info=True)
