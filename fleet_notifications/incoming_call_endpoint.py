@@ -5,7 +5,7 @@ from functools import wraps
 from twilio.twiml.voice_response import VoiceResponse # type: ignore
 from twilio.request_validator import RequestValidator # type: ignore
 from fleet_notifications.script_args.configs import Twilio, HTTPServer
-from fleet_management_http_client_python import ApiClient, CarActionApi, CarStateApi, CarActionStatus, CarStatus # type: ignore
+from fleet_management_http_client_python import ApiClient, CarActionApi, CarStateApi, CarActionStatus, CarStatus, CarApi # type: ignore
 from fleet_notifications.logs import LOGGER_NAME
 
 
@@ -13,6 +13,13 @@ WAITING_TIME_PERIOD = 1
 logger = logging.getLogger(LOGGER_NAME)
 
 flask_app = Flask(__name__)
+
+
+class InvalidCarName(Exception):
+    pass
+
+class StateSwitchTimeout(Exception):
+    pass
 
 
 class FlaskAppWrapper(object):
@@ -38,6 +45,7 @@ class IncomingCallHandler:
         self.action_timeout_s = twilio_config.call_handling.car_action_change_timeout_s
         self.car_action_api = CarActionApi(api_client)
         self.car_state_api = CarStateApi(api_client)
+        self.car_api = CarApi(api_client)
         self.server_port = server_config.port
         self.allow_http = allow_http
 
@@ -68,6 +76,14 @@ class IncomingCallHandler:
         return True
 
 
+    def _get_car_id_from_name(self, name: str) -> int:
+        """Get the car ID from its name"""
+        for car in self.car_api.get_cars():
+            if car.name == name:
+                return car.id
+        raise InvalidCarName(f"Car with name: {name} not found.")
+
+
     @staticmethod
     def _validate_twilio_request(f):
         """Validates that incoming requests genuinely originated from Twilio"""
@@ -95,20 +111,20 @@ class IncomingCallHandler:
         resp = VoiceResponse()
 
         try:
-            car_id = self.allowed_incoming_phone_numbers[request.values['From']]
+            car_id = self._get_car_id_from_name(self.allowed_incoming_phone_numbers[request.values['From']])
             action_status = self.car_action_api.get_car_action_states(car_id, last_n=1)[0].action_status
 
             if action_status == CarActionStatus.PAUSED:
                 self.car_action_api.unpause_car(car_id)
                 if not self._car_action_status_occurred([CarActionStatus.NORMAL], car_id):
-                    raise Exception("Car did not enter NORMAL action state in time.")
+                    raise StateSwitchTimeout("Car did not enter NORMAL action state in time.")
                 resp.say("Car successfully unpaused.")
             else:
                 self.car_action_api.pause_car(car_id)
                 if not self._car_action_status_occurred([CarActionStatus.PAUSED], car_id):
-                    raise Exception("Car did not enter PAUSED action state in time.")
+                    raise StateSwitchTimeout("Car did not enter PAUSED action state in time.")
                 if not self._car_status_occured([CarStatus.IDLE, CarStatus.OUT_OF_ORDER], car_id):
-                    raise Exception("Car did not enter IDLE state in time.")
+                    raise StateSwitchTimeout("Car did not enter IDLE state in time.")
                 resp.say("Car successfully paused.")
         except Exception as e:
             logger.error(f"An error occured while handling a call: {e}", exc_info=True)
