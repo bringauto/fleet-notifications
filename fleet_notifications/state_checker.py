@@ -136,7 +136,7 @@ class OrderStateChecker:
                 continue
             try:
                 car = self.car_api.get_car(order.car_id)
-            except:
+            except Exception:
                 logger.warning(f"Car not found: {order.car_id}")
                 continue
             phone = "" if car.car_admin_phone.phone is None else car.car_admin_phone.phone
