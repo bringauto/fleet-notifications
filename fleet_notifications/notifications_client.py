@@ -67,7 +67,7 @@ class NotificationClient:
             call_status = call.fetch().status
             timeout_count += PICK_UP_WAIT_INTERVAL
             if timeout_count > self._call_status_timeout_s:
-                logger.error("Call polling timed out.")
+                logger.warning("Call polling timed out.")
                 return True
 
         if call_status == CallInstance.Status.FAILED:

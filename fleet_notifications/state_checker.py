@@ -28,7 +28,7 @@ class OrderStateChecker:
             try:
                 self.orders[order.id] = self.order_api.get_order(car_id=order.car_id, order_id=order.id)
             except Exception as e:
-                logger.error(f"Error while getting order {order.id} from the api: {e}")
+                logger.warning(f"Unable to get order {order.id} from the api: {e}")
                 notifications_db.delete_order(order.id)
                 continue
         return max(self.orders, key=lambda order: order.timestamp, default=0)
@@ -47,7 +47,7 @@ class OrderStateChecker:
             try:
                 self.orders[state.order_id] = self.order_api.get_order(car_id=car_id, order_id=state.order_id)
             except Exception as e:
-                logger.error(f"Error while getting order with ID {state.order_id} from the api: {e}")
+                logger.warning(f"Unable to get order with ID {state.order_id} from the api: {e}")
                 return False
 
         if (no_active_order and not self._is_order_finished(self.orders[state.order_id])):
@@ -64,7 +64,7 @@ class OrderStateChecker:
             try:
                 self.orders[state.order_id] = self.order_api.get_order(car_id=car_id, order_id=state.order_id)
             except Exception as e:
-                logger.error(f"Error while getting order with ID {state.order_id} from the api: {e}")
+                logger.warning(f"Unable to get order with ID {state.order_id} from the api: {e}")
                 return
 
             notification_phone = self.orders[state.order_id].notification_phone
@@ -132,12 +132,12 @@ class OrderStateChecker:
             )
             order = all_orders.get(order_id, None)
             if not order:
-                logger.error(f"Order not found: {order_id}")
+                logger.warning(f"Order not found: {order_id}")
                 continue
             try:
                 car = self.car_api.get_car(order.car_id)
             except:
-                logger.error(f"Car not found: {order.car_id}")
+                logger.warning(f"Car not found: {order.car_id}")
                 continue
             phone = "" if car.car_admin_phone.phone is None else car.car_admin_phone.phone
             if self._check_if_order_is_new(car.id, state, phone, car.under_test):
