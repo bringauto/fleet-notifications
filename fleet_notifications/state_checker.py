@@ -31,7 +31,10 @@ class OrderStateChecker:
                 logger.warning(f"Unable to get order {order.id} from the api: {e}")
                 notifications_db.delete_order(order.id)
                 continue
-        return max(self.orders, key=lambda order: order.timestamp, default=0)
+        return max(
+            self.orders.values(),
+            key=lambda order: order.last_state.timestamp
+        ).last_state.timestamp if self.orders else 0
 
 
     def _is_order_finished(self, order: Order) -> bool:
@@ -84,7 +87,8 @@ class OrderStateChecker:
             order.id for order in self.orders.values() if order.id not in active_order_ids
         ]
         for order_id in finished_order_ids + deleted_order_ids:
-            self.orders.pop(order_id)
+            if order_id in self.orders:
+                self.orders.pop(order_id)
             notifications_db.delete_order(order_id)
 
 

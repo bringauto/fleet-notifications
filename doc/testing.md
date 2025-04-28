@@ -1,5 +1,12 @@
 # Testing
 
+## Notification calls
+
+- launch [etna](https://github.com/bringauto/etna) with profile all
+- create a valid config file (the config.json file is already mostly setup for running locally with etna)
+- run the script by `python3 -m fleet_notifications <path-to-config-file>
+- notification calls should be triggered in the script automatically as the car starts driving / reaches a stop (car position can be displayed in a browser at http://localhost:5000)(if no calls are attempted, the car likely has the `underTest` parameter set to true)
+
 ## Pausing/Unpausing car
 
 - launch [etna](https://github.com/bringauto/etna) with profile all

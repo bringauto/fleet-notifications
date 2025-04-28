@@ -57,11 +57,46 @@ The script automatically connects to the PostgreSQL database using data from the
 
 Note that these data should comply with the requirements specified in SQLAlchemy [documentation](https://docs.sqlalchemy.org/en/20/core/engines.html#database-urls).
 
-### Testing
+## Testing
 
-Testing has to be done manually. Described in [testing](./doc/testing.md).
+To fully test the script, launch the unit tests and follow the procedure described in manual testing.
 
-### Configuration
+### Manual
+Described in [testing](./doc/testing.md).
+
+### Unit tests
+
+#### Preparing the environment and dependencies
+
+Set up the virtual environment and install the dependencies. Install the tests dependencies and the project itself in editable mode:
+
+```bash
+pip install -r tests/requirements.txt
+pip install -e .
+```
+
+#### Running the tests
+
+In the root folder, run the following
+
+```bash
+python -m tests [-h] [PATH1] [PATH2] ...
+```
+
+Each PATH is specified relative to the `tests` folder. If no PATH is specified, all the tests will run. Otherwise
+
+- when PATH is a directory, the script will run all tests in this directory (and subdirectories),
+- when PATH is a Python file, the script will run all tests in the file.
+
+The `-h` flag makes the script display tests' coverage in an HTML format, for example in your web browser.
+
+##### Example
+
+```bash
+python -m tests test_call_handler.py
+```
+
+## Configuration
 The settings can be found in the `config/config.json`, including the database information and parameters for Fleet management connection.
 
 ```json

@@ -107,17 +107,22 @@ class IncomingCallHandler:
 
     @_validate_twilio_request
     def _handle_call(self):
+        return self.handle_call_function(request.values)
+
+
+    def handle_call_function(self, request_values):
         """Handle incoming calls from Twilio"""
         resp = VoiceResponse()
 
         try:
-            car_id = self._get_car_id_from_name(self.allowed_incoming_phone_numbers[request.values['From']])
+            car_id = self._get_car_id_from_name(self.allowed_incoming_phone_numbers[request_values['From']])
             action_status = self.car_action_api.get_car_action_states(car_id, last_n=1)[0].action_status
 
             if action_status == CarActionStatus.PAUSED:
                 self.car_action_api.unpause_car(car_id)
                 if not self._car_action_status_occurred([CarActionStatus.NORMAL], car_id):
                     raise StateSwitchTimeout("Car did not enter NORMAL action state in time.")
+                logger.info(f"Car {car_id} successfully unpaused.")
                 resp.say("Car successfully unpaused.")
             else:
                 self.car_action_api.pause_car(car_id)
@@ -125,6 +130,7 @@ class IncomingCallHandler:
                     raise StateSwitchTimeout("Car did not enter PAUSED action state in time.")
                 if not self._car_status_occured([CarStatus.IDLE, CarStatus.OUT_OF_ORDER], car_id):
                     raise StateSwitchTimeout("Car did not enter IDLE state in time.")
+                logger.info(f"Car {car_id} successfully paused.")
                 resp.say("Car successfully paused.")
         except Exception as e:
             logger.error(f"An error occured while handling a call: {e}", exc_info=True)
