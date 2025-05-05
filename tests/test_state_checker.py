@@ -6,8 +6,6 @@ from fleet_management_http_client_python import ( # type: ignore
     Configuration,
     MobilePhone,
     CarApi, Car,
-    CarStateApi, CarState, CarStatus,
-    CarActionApi, CarActionState, CarActionStatus,
     OrderApi, Order,
     OrderStateApi, OrderState, OrderStatus
 )
@@ -32,6 +30,7 @@ def _create_test_state_checker() -> OrderStateChecker:
 
 
 class Test_State_Checker_Initialization(unittest.TestCase):
+    """Tests the initialization of the OrderStateChecker class."""
 
     def test_initialization(self):
         state_checker = _create_test_state_checker()
@@ -44,8 +43,10 @@ class Test_State_Checker_Initialization(unittest.TestCase):
 
 
 class Test_State_Checker_Is_Order_Finished(unittest.TestCase):
+    """Tests the _is_order_finished method of the OrderStateChecker class."""
 
     def test_is_order_finished(self):
+        """Tests if the _is_order_finished method returns true for finished orders and false for unfinished ones."""
         state_checker = _create_test_state_checker()
         order = Order(carId=0, targetStopId=0, stopRouteId=0,
                       last_state=OrderState(orderId=0, status=OrderStatus.DONE))
@@ -57,6 +58,7 @@ class Test_State_Checker_Is_Order_Finished(unittest.TestCase):
 
 
 class Test_State_Checker_Check_New_Order(unittest.TestCase):
+    """Tests the _check_if_order_is_new method of the OrderStateChecker class."""
 
     def setUp(self) -> None:
         self.state_checker = _create_test_state_checker()
@@ -70,6 +72,8 @@ class Test_State_Checker_Check_New_Order(unittest.TestCase):
         }
 
     def test_check_new_order(self):
+        """Tests if the _check_if_order_is_new method returns true for a new order.
+        Also checks if the order is added to the list of orders."""
         state = OrderState(orderId=3, status=OrderStatus.IN_PROGRESS)
         self.state_checker.orders.clear()
         self.mock_api._set_orders([Order(carId=1, targetStopId=0, stopRouteId=0, id=3,
@@ -78,6 +82,8 @@ class Test_State_Checker_Check_New_Order(unittest.TestCase):
         self.assertEqual(len(self.state_checker.orders), 1)
 
     def test_check_new_order_not_new(self):
+        """Tests if the _check_if_order_is_new method returns true for an existing order.
+        Also checks if the order is not added to the list of orders."""
         state = OrderState(orderId=1, status=OrderStatus.IN_PROGRESS)
         self.mock_api._set_orders([Order(carId=1, targetStopId=0, stopRouteId=0, id=1,
                                          last_state=OrderState(orderId=1, status=OrderStatus.IN_PROGRESS))])
@@ -85,12 +91,14 @@ class Test_State_Checker_Check_New_Order(unittest.TestCase):
         self.assertEqual(len(self.state_checker.orders), 2)
 
     def test_check_new_order_not_found(self):
+        """Tests if the _check_if_order_is_new method returns false for an order that is not found in the API."""
         state = OrderState(orderId=3, carId=1, status=OrderStatus.IN_PROGRESS)
         self.assertFalse(self.state_checker._check_if_order_is_new(1, state, "admin_phone", True))
         self.assertEqual(len(self.state_checker.orders), 2)
 
 
 class Test_State_Checker_Call_If_Order_Done(unittest.TestCase):
+    """Tests the _call_phone_if_order_is_done method of the OrderStateChecker class."""
 
     def setUp(self) -> None:
         self.state_checker = _create_test_state_checker()
@@ -104,6 +112,7 @@ class Test_State_Checker_Call_If_Order_Done(unittest.TestCase):
         }
 
     def test_call_if_order_is_done(self):
+        """Tests if the _call_phone_if_order_is_done method correctly considers an order as finished."""
         state = OrderState(orderId=1, status=OrderStatus.DONE)
         self.mock_api._set_orders([Order(carId=1, targetStopId=0, stopRouteId=0, id=1,
                                          notificationPhone=MobilePhone(phone="admin_phone"),
@@ -114,6 +123,7 @@ class Test_State_Checker_Call_If_Order_Done(unittest.TestCase):
         self.assertEqual(len(self.state_checker.orders), 2)
 
     def test_call_if_order_is_done_not_found(self):
+        """Tests if the _call_phone_if_order_is_done method correctly handles an order that is not found in the API."""
         state = OrderState(orderId=2, carId=1, status=OrderStatus.DONE)
         with self.assertLogs(LOGGER_NAME, level="WARNING") as log:
             self.state_checker._call_phone_if_order_is_done(1, state, True)
@@ -123,6 +133,7 @@ class Test_State_Checker_Call_If_Order_Done(unittest.TestCase):
         self.assertEqual(len(self.state_checker.orders), 2)
 
     def test_call_if_order_is_done_no_phone(self):
+        """Tests if the _call_phone_if_order_is_done method correctly handles an order with no phone number."""
         state = OrderState(orderId=1, carId=1, status=OrderStatus.DONE)
         self.mock_api._set_orders([Order(carId=1, targetStopId=0, stopRouteId=0, id=1,
                                          last_state=OrderState(orderId=1, status=OrderStatus.DONE))])
@@ -134,6 +145,7 @@ class Test_State_Checker_Call_If_Order_Done(unittest.TestCase):
         self.assertEqual(len(self.state_checker.orders), 2)
 
     def test_no_call_if_order_is_not_done(self):
+        """Tests if the _call_phone_if_order_is_done method does not call if the order is not done."""
         state = OrderState(orderId=1, carId=1, status=OrderStatus.IN_PROGRESS)
         self.mock_api._set_orders([Order(carId=1, targetStopId=0, stopRouteId=0, id=1,
                                          last_state=OrderState(orderId=1, status=OrderStatus.IN_PROGRESS))])
@@ -143,6 +155,7 @@ class Test_State_Checker_Call_If_Order_Done(unittest.TestCase):
 
 
 class Test_State_Checker_Check_All_Orders(unittest.TestCase):
+    """Tests the _check_orders_and_call_if_done method of the OrderStateChecker class."""
 
     def setUp(self) -> None:
         self.state_checker = _create_test_state_checker()
@@ -151,6 +164,7 @@ class Test_State_Checker_Check_All_Orders(unittest.TestCase):
         self.state_checker.car_api = self.mock_api
 
     def test_check_all_orders_order_not_found(self):
+        """Tests if the _check_orders_and_call_if_done method correctly handles an order that is not found in the API."""
         with self.assertLogs(LOGGER_NAME, level="WARNING") as log:
             self.state_checker._check_orders_and_call_if_done(
                 {1: OrderState(status=OrderStatus.IN_PROGRESS, orderId=0)},
@@ -158,6 +172,7 @@ class Test_State_Checker_Check_All_Orders(unittest.TestCase):
             self.assertNotEqual(log.output[0].find("Order not found: 1"), -1)
 
     def test_check_all_orders_car_not_found(self):
+        """Tests if the _check_orders_and_call_if_done method correctly handles a car that is not found in the API."""
         self.mock_api._set_orders([Order(carId=1, targetStopId=0, stopRouteId=0, id=1,
                                          last_state=OrderState(orderId=1, status=OrderStatus.IN_PROGRESS))])
         with self.assertLogs(LOGGER_NAME, level="WARNING") as log:
@@ -167,6 +182,7 @@ class Test_State_Checker_Check_All_Orders(unittest.TestCase):
             self.assertNotEqual(log.output[0].find("Car not found: 1"), -1)
 
     def test_check_all_orders_and_call(self):
+        """Tests if the _check_orders_and_call_if_done method detects a new mission starting for a car."""
         self.mock_api._set_orders([Order(carId=1, targetStopId=0, stopRouteId=0, id=1,
                                          last_state=OrderState(orderId=1, status=OrderStatus.IN_PROGRESS))])
         self.mock_api._set_cars([Car(id=1, platformHwId=1, name="test_name", underTest=True,
@@ -180,6 +196,7 @@ class Test_State_Checker_Check_All_Orders(unittest.TestCase):
 
 
 class Test_State_Checker_Load_Orders(unittest.TestCase):
+    """Tests the _load_unfinished_orders method of the OrderStateChecker class."""
 
     def setUp(self) -> None:
         self.state_checker = _create_test_state_checker()
@@ -197,12 +214,14 @@ class Test_State_Checker_Load_Orders(unittest.TestCase):
         )
 
     def test_load_orders(self):
+        """Tests if the _load_unfinished_orders method loads the orders correctly."""
         self.mock_api._set_orders([Order(carId=1, targetStopId=0, stopRouteId=0, id=1,
                                          last_state=OrderState(orderId=1, status=OrderStatus.IN_PROGRESS, timestamp=2))])
         notifications_db.update_order(1, 1, 0)
         self.assertEqual(self.state_checker._load_unfinished_orders(), 2)
 
     def test_load_orders_no_orders(self):
+        """Tests if the _load_unfinished_orders method logs a warning when an order was not found in the API."""
         notifications_db.update_order(1, 1, 0)
         with self.assertLogs(LOGGER_NAME, level="WARNING") as log:
             self.assertEqual(self.state_checker._load_unfinished_orders(), 0)
@@ -210,6 +229,7 @@ class Test_State_Checker_Load_Orders(unittest.TestCase):
         self.assertEqual(len(self.state_checker.orders), 0)
 
     def test_load_orders_correct_timestamp(self):
+        """Tests if the _load_unfinished_orders method loads the orders and returns the highest timestamp."""
         self.mock_api._set_orders([Order(carId=1, targetStopId=0, stopRouteId=0, id=1,
                                          last_state=OrderState(orderId=1, status=OrderStatus.IN_PROGRESS, timestamp=1)),
                                    Order(carId=1, targetStopId=0, stopRouteId=0, id=2,
@@ -223,6 +243,7 @@ class Test_State_Checker_Load_Orders(unittest.TestCase):
 
 
 class Test_State_Checker_Remove_Finished_Orders(unittest.TestCase):
+    """Tests the _remove_finished_orders method of the OrderStateChecker class."""
 
     def setUp(self) -> None:
         self.state_checker = _create_test_state_checker()
@@ -242,6 +263,7 @@ class Test_State_Checker_Remove_Finished_Orders(unittest.TestCase):
         )
 
     def test_remove_finished_orders(self):
+        """Tests if the _remove_finished_orders method removes finished orders from the list."""
         self.state_checker.orders = {
             1: Order(carId=1, targetStopId=0, stopRouteId=0, id=1,
                      last_state=OrderState(orderId=1, status=OrderStatus.DONE))
@@ -250,6 +272,7 @@ class Test_State_Checker_Remove_Finished_Orders(unittest.TestCase):
         self.assertEqual(len(self.state_checker.orders), 0)
 
     def test_remove_finished_orders_order_not_in_api(self):
+        """Tests if the _remove_finished_orders method removes orders that are not in the API."""
         self.state_checker.orders = {
             1: Order(carId=1, targetStopId=0, stopRouteId=0, id=1,
                      last_state=OrderState(orderId=1, status=OrderStatus.IN_PROGRESS)),
@@ -260,6 +283,7 @@ class Test_State_Checker_Remove_Finished_Orders(unittest.TestCase):
         self.assertEqual(len(self.state_checker.orders), 1)
 
     def test_remove_finished_orders_order_finished_and_not_in_api(self):
+        """Tests if the _remove_finished_orders method removes orders that are finished and not in the API."""
         self.state_checker.orders = {
             2: Order(carId=1, targetStopId=0, stopRouteId=0, id=2,
                      last_state=OrderState(orderId=1, status=OrderStatus.DONE))
@@ -269,6 +293,7 @@ class Test_State_Checker_Remove_Finished_Orders(unittest.TestCase):
 
 
 class Test_State_Checker_Timestamp_Update(unittest.TestCase):
+    """Tests the _update_latest_timestamps method of the OrderStateChecker class."""
 
     def setUp(self) -> None:
         self.state_checker = _create_test_state_checker()
@@ -284,6 +309,7 @@ class Test_State_Checker_Timestamp_Update(unittest.TestCase):
         )
 
     def test_updating_timestamps(self):
+        """Tests if the _update_latest_timestamps method updates the timestamps of the orders."""
         self.state_checker.orders = {
             1: Order(carId=1, targetStopId=0, stopRouteId=0, id=1,
                      last_state=OrderState(orderId=1, status=OrderStatus.IN_PROGRESS, timestamp=1)),
@@ -296,6 +322,7 @@ class Test_State_Checker_Timestamp_Update(unittest.TestCase):
         self.assertEqual(orders[1].timestamp, 3)
 
     def test_updating_timestamps_finished_orders(self):
+        """Tests if the _update_latest_timestamps method removes finished orders."""
         self.state_checker.orders = {
             1: Order(carId=1, targetStopId=0, stopRouteId=0, id=1,
                      last_state=OrderState(orderId=1, status=OrderStatus.DONE, timestamp=1)),

@@ -29,8 +29,11 @@ def _create_test_call_handler() -> IncomingCallHandler:
 
 
 class Test_Call_Handler_Initialization(unittest.TestCase):
+    """Tests the initialization of the IncomingCallHandler class."""
 
     def test_initialization(self):
+        """Tests if the IncomingCallHandler class is initialized correctly.
+        Configured values are compared to the values in the test configuration."""
         call_handler = _create_test_call_handler()
         self.assertEqual(call_handler.twilio_auth_token, TEST_TWILIO_CONFIG.auth_token)
         self.assertEqual(
@@ -49,6 +52,7 @@ class Test_Call_Handler_Initialization(unittest.TestCase):
 
 
 class Test_Call_Handler_Action_Checking(unittest.TestCase):
+    """Tests the _car_action_status_occured method of the IncomingCallHandler class."""
 
     def setUp(self) -> None:
         self.call_handler = _create_test_call_handler()
@@ -58,17 +62,21 @@ class Test_Call_Handler_Action_Checking(unittest.TestCase):
         )
 
     def test_car_action_status_occurred(self):
+        """Tests if the _car_action_status_occurred method returns true when the action status is in the set."""
         self.assertTrue(
             self.call_handler._car_action_status_occurred({CarActionStatus.NORMAL}, 1)
         )
 
     def test_car_action_status_occurred_timeout(self):
+        """Tests if the _car_action_status_occurred method returns false when the action status is not in the set.
+        Action status will not be set to PAUSED in the mock API."""
         self.assertFalse(
             self.call_handler._car_action_status_occurred({CarActionStatus.PAUSED}, 1)
         )
 
 
 class Test_Call_Handler_State_Checking(unittest.TestCase):
+    """Tests the _car_status_occured method of the IncomingCallHandler class."""
 
     def setUp(self) -> None:
         self.call_handler = _create_test_call_handler()
@@ -78,17 +86,21 @@ class Test_Call_Handler_State_Checking(unittest.TestCase):
         )
 
     def test_car_status_occurred(self):
+        """Tests if the _car_status_occured method returns true when the status is in the set."""
         self.assertTrue(
             self.call_handler._car_status_occured({CarStatus.IDLE}, 1)
         )
 
     def test_car_status_occurred_timeout(self):
+        """Tests if the _car_status_occured method returns false when the status is not in the set.
+        Status will not be set to DRIVING in the mock API."""
         self.assertFalse(
             self.call_handler._car_status_occured({CarStatus.DRIVING}, 1)
         )
 
 
 class Test_Call_Handler_Car_Id(unittest.TestCase):
+    """Tests the _get_car_id_from_name method of the IncomingCallHandler class."""
 
     def setUp(self) -> None:
         self.call_handler = _create_test_call_handler()
@@ -98,16 +110,19 @@ class Test_Call_Handler_Car_Id(unittest.TestCase):
         )
 
     def test_get_car_id_from_name(self):
+        """Tests if the _get_car_id_from_name method returns the correct car ID."""
         car_id = self.call_handler._get_car_id_from_name("test_name")
         self.assertEqual(car_id, 1)
 
     def test_get_car_id_from_name_not_found(self):
+        """Tests if the _get_car_id_from_name method raises an exception when the car name is not found."""
         with self.assertRaises(InvalidCarName) as context:
             self.call_handler._get_car_id_from_name("non_existent_name")
         self.assertTrue("Car with name: non_existent_name not found." in str(context.exception))
 
 
 class Test_Call_Handler_Call_Handling(unittest.TestCase):
+    """Tests the handle_call_function method of the IncomingCallHandler class."""
 
     def setUp(self) -> None:
         self.call_handler = _create_test_call_handler()
@@ -126,10 +141,13 @@ class Test_Call_Handler_Call_Handling(unittest.TestCase):
         )
 
     def test_car_pause(self):
+        """Tests if the car is paused correctly."""
         response = self.call_handler.handle_call_function({"From": "test_number"})
         self.assertNotEqual(response.find("Car successfully paused."), -1)
 
     def test_car_pause_action_timeout(self):
+        """Tests not changing the car action state to PAUSED from NORMAL throws an error.
+        Action status will not be set to PAUSED in the mock API."""
         self.mock_api.actions_not_updating = True
         with self.assertLogs(LOGGER_NAME, level="ERROR") as log:
             response = self.call_handler.handle_call_function({"From": "test_number"})
@@ -142,6 +160,8 @@ class Test_Call_Handler_Call_Handling(unittest.TestCase):
             self.assertNotEqual(response.find("An error occured while handling the call."), -1)
 
     def test_car_pause_state_timeout(self):
+        """Tests not changing the car state to IDLE throws an error.
+        Status will not be set to IDLE in the mock API."""
         self.mock_api.states_not_updating = True
         with self.assertLogs(LOGGER_NAME, level="ERROR") as log:
             response = self.call_handler.handle_call_function({"From": "test_number"})
@@ -154,6 +174,7 @@ class Test_Call_Handler_Call_Handling(unittest.TestCase):
             self.assertNotEqual(response.find("An error occured while handling the call."), -1)
 
     def test_car_unpause(self):
+        """Tests if the car is unpaused correctly."""
         self.mock_api._set_car_states(
             [CarState(id=0, timestamp=0, status=CarStatus.IDLE, carId=1)]
         )
@@ -164,6 +185,8 @@ class Test_Call_Handler_Call_Handling(unittest.TestCase):
         self.assertNotEqual(response.find("Car successfully unpaused."), -1)
 
     def test_car_unpause_action_timeout(self):
+        """Tests not changing the car action state to NORMAL from PAUSED throws an error.
+        Action status will not be set to NORMAL in the mock API."""
         self.mock_api._set_car_states(
             [CarState(id=0, timestamp=0, status=CarStatus.IDLE, carId=1)]
         )

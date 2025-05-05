@@ -93,7 +93,8 @@ class OrderStateChecker:
 
 
     def _update_latest_timestamps(self, since: int) -> None:
-        """If an order is not finished, the since parameter is used as its latest timestamp."""
+        """If an order is not finished, the since parameter is used as its latest timestamp.
+        Finished orders are removed from the database."""
         orders_to_update = [order for order in self.orders.values() if not self._is_order_finished(order)]
         for order in orders_to_update:
             notifications_db.update_order(order.id, order.car_id, since)
