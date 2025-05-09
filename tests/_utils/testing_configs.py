@@ -6,7 +6,7 @@ TEST_TWILIO_CONFIG = Twilio(
     auth_token="test_token",
     from_number="test_from_number",
     notifications=Twilio.Notifications(
-        play_sound_url="http://example.com/sound.mp3",
+        play_sound_url="https://google.com",
         repeated_calls=3,
         call_status_timeout_s=3
     ),
