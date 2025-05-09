@@ -1,7 +1,8 @@
-import logging, time
+import logging, time, requests # type: ignore
 
 from twilio.rest import Client # type: ignore
 from twilio.rest.api.v2010.account.call import CallInstance # type: ignore
+
 from fleet_notifications.script_args.configs import Twilio
 from fleet_notifications.logs import LOGGER_NAME
 
@@ -27,6 +28,9 @@ class NotificationClient:
             if phone_number == "":
                 logger.warning("No phone number provided.")
                 return
+            if not self._check_url_exists():
+                logger.error("The provided audio file URL does not exist.")
+                return
 
             logger.info("Calling phone number: " + phone_number)
             try:
@@ -40,6 +44,14 @@ class NotificationClient:
                         break
             except Exception as e:
                 logger.error(f"An error occured while handling a call to number {phone_number} : {e}")
+
+
+    def _check_url_exists(self) -> bool:
+        try:
+            response = requests.get(self._url, timeout=5)
+            return response.status_code == 200
+        except requests.RequestException as e:
+            return False
 
 
     def _is_call_picked_up(self, call_status: CallInstance.Status) -> bool:
@@ -67,7 +79,7 @@ class NotificationClient:
             call_status = call.fetch().status
             timeout_count += PICK_UP_WAIT_INTERVAL
             if timeout_count > self._call_status_timeout_s:
-                logger.error("Call polling timed out.")
+                logger.warning("Call polling timed out.")
                 return True
 
         if call_status == CallInstance.Status.FAILED:

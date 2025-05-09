@@ -1,5 +1,9 @@
 from fleet_notifications.script_args import Database as _db_args
-from fleet_notifications.database.connection import get_connection_source, set_db_connection
+from fleet_notifications.database.connection import (
+    get_connection_source,
+    set_db_connection,
+    set_test_db_connection
+)
 from sqlalchemy import MetaData ,Table, Column, Integer, BigInteger
 from sqlalchemy.dialects.postgresql import insert
 from fleet_management_http_client_python import Order # type: ignore
@@ -15,13 +19,19 @@ _orders = Table(
 )
 
 
-def initialize_db(connection: _db_args.Connection) -> None:
-    set_db_connection(
-        dblocation = connection.location + ":" + str(connection.port),
-        username = connection.username,
-        password = connection.password,
-        db_name = connection.database_name
-    )
+def initialize_db(connection: _db_args.Connection, test=False) -> None:
+    if test:
+        set_test_db_connection(
+            dblocation = "",
+            db_name = ""
+        )
+    else:
+        set_db_connection(
+            dblocation = connection.location + ":" + str(connection.port),
+            username = connection.username,
+            password = connection.password,
+            db_name = connection.database_name
+        )
     try:
         print("Creating orders table")
         with get_connection_source().begin() as conn:
@@ -61,7 +71,7 @@ def get_orders() -> list[Order]:
                 ret_list.append(Order(
                     id=order[1],
                     timestamp=order[3],
-                    carId=[2],
+                    carId=order[2],
                     targetStopId=0,
                     stopRouteId=0
                     ))

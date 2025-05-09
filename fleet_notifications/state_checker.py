@@ -28,10 +28,13 @@ class OrderStateChecker:
             try:
                 self.orders[order.id] = self.order_api.get_order(car_id=order.car_id, order_id=order.id)
             except Exception as e:
-                logger.error(f"Error while getting order {order.id} from the api: {e}")
+                logger.warning(f"Unable to get order {order.id} from the api: {e}")
                 notifications_db.delete_order(order.id)
                 continue
-        return max(self.orders, key=lambda order: order.timestamp, default=0)
+        return max(
+            self.orders.values(),
+            key=lambda order: order.last_state.timestamp
+        ).last_state.timestamp if self.orders else 0
 
 
     def _is_order_finished(self, order: Order) -> bool:
@@ -47,7 +50,7 @@ class OrderStateChecker:
             try:
                 self.orders[state.order_id] = self.order_api.get_order(car_id=car_id, order_id=state.order_id)
             except Exception as e:
-                logger.error(f"Error while getting order with ID {state.order_id} from the api: {e}")
+                logger.warning(f"Unable to get order with ID {state.order_id} from the api: {e}")
                 return False
 
         if (no_active_order and not self._is_order_finished(self.orders[state.order_id])):
@@ -64,7 +67,7 @@ class OrderStateChecker:
             try:
                 self.orders[state.order_id] = self.order_api.get_order(car_id=car_id, order_id=state.order_id)
             except Exception as e:
-                logger.error(f"Error while getting order with ID {state.order_id} from the api: {e}")
+                logger.warning(f"Unable to get order with ID {state.order_id} from the api: {e}")
                 return
 
             notification_phone = self.orders[state.order_id].notification_phone
@@ -84,12 +87,14 @@ class OrderStateChecker:
             order.id for order in self.orders.values() if order.id not in active_order_ids
         ]
         for order_id in finished_order_ids + deleted_order_ids:
-            self.orders.pop(order_id)
+            if order_id in self.orders:
+                self.orders.pop(order_id)
             notifications_db.delete_order(order_id)
 
 
     def _update_latest_timestamps(self, since: int) -> None:
-        """If an order is not finished, the since parameter is used as its latest timestamp."""
+        """If an order is not finished, the since parameter is used as its latest timestamp.
+        Finished orders are removed from the database."""
         orders_to_update = [order for order in self.orders.values() if not self._is_order_finished(order)]
         for order in orders_to_update:
             notifications_db.update_order(order.id, order.car_id, since)
@@ -132,12 +137,12 @@ class OrderStateChecker:
             )
             order = all_orders.get(order_id, None)
             if not order:
-                logger.error(f"Order not found: {order_id}")
+                logger.warning(f"Order not found: {order_id}")
                 continue
             try:
                 car = self.car_api.get_car(order.car_id)
-            except:
-                logger.error(f"Car not found: {order.car_id}")
+            except Exception:
+                logger.warning(f"Car not found: {order.car_id}")
                 continue
             phone = "" if car.car_admin_phone.phone is None else car.car_admin_phone.phone
             if self._check_if_order_is_new(car.id, state, phone, car.under_test):

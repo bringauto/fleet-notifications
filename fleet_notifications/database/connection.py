@@ -60,6 +60,19 @@ def set_db_connection(
         foo()
 
 
+def set_test_db_connection(dblocation: str = "", db_name: str = "") -> None:
+    """Create test SQLAlchemy engine object used to connect to the database using SQLite.
+    No username or password required.
+    Set module-level variable _connection_source to the new engine object."""
+    global _connection_source
+    source = _new_connection_source(
+        dialect="sqlite", dbapi="pysqlite", dblocation=dblocation, db_name=db_name
+    )
+    _connection_source = source
+    assert _connection_source is not None
+    create_all_tables(source)
+
+
 def create_all_tables(source: Engine) -> None:
     Base.metadata.create_all(source)
 
