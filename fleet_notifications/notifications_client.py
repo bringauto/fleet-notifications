@@ -30,7 +30,6 @@ class NotificationClient:
                 return
             if not self._check_url_exists():
                 logger.error("The provided audio file URL does not exist.")
-                return
 
             logger.info("Calling phone number: " + phone_number)
             try:
