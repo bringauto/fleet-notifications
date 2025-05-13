@@ -82,6 +82,6 @@ class NotificationClient:
                 return True
 
         if call_status == CallInstance.Status.FAILED:
-            logger.warning(f"Call: {sid.sid} failed.")
+            logger.error(f"Call: {sid.sid} failed.")
             return True
         return call_status != CallInstance.Status.NO_ANSWER
