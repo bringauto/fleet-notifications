@@ -6,3 +6,7 @@ fleet_management_http_client_python @ git+https://github.com/bringauto/fleet-man
 SQLAlchemy >= 2.0.46
 twilio >= 9.10.1
 flask >= 3.1.2
+requests >= 2.32.2
+urllib3 >= 1.26.19
+aiohttp >= 3.9.0
+zipp >= 3.19.1
